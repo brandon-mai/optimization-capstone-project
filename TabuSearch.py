@@ -84,7 +84,7 @@ class Solver:
 
         return new_route
 
-    def get_neighborhood(self, route, time_limit=10, opt='2'):
+    def get_neighborhood(self, route, opt='2', time_limit=None):
         """Return a list of neighbors of route, in ascending order of total distance, using 2 or 2.5-opt."""
         neighbor_list = list()
         route = [0] + route
@@ -103,8 +103,9 @@ class Solver:
                 y1 = route[j]
                 y2 = route[(j + 1) % num_nodes]
 
-                if time.time() - self.time > time_limit:
-                    return sorted(neighbor_list, key=lambda x: self.get_distance(x))
+                if time_limit:
+                    if time.time() - self.time > time_limit:
+                        return sorted(neighbor_list, key=lambda x: self.get_distance(x))
 
                 if self.Distance_Matrix[x1][x2] + self.Distance_Matrix[y1][y2] > self.Distance_Matrix[x1][y1] + \
                         self.Distance_Matrix[x2][y2]:
@@ -142,7 +143,7 @@ class Solver:
 
         return sorted(neighbor_list, key=lambda x: self.get_distance(x))
 
-    def solve_tabu_search(self, time_limit=10, opt='2', tabu_list_size=100):
+    def solve_tabu_search(self, iterations=100, opt='2', tabu_list_size=100):
         """Solve the problem using Tabu Search algorithm."""
         self.time = time.time()
         self.get_first_solution()
@@ -150,8 +151,8 @@ class Solver:
         current_ans = self.ans
         tabu_list = list()
 
-        while time.time() - self.time < time_limit:
-            neighborhood = self.get_neighborhood(current_ans, time_limit=time_limit, opt=opt)
+        while iterations > 0:
+            neighborhood = self.get_neighborhood(current_ans, opt=opt)
             neighborhood = [neighbor for neighbor in neighborhood if neighbor not in tabu_list]
 
             if len(neighborhood) == 0:
@@ -173,6 +174,8 @@ class Solver:
                 self.ans = best_neighbor
                 self.best_dist = best_neighbor_dist
 
+            iterations -= 1
+
     def print_solution(self):
         print(self.N)
         print(*self.ans)
@@ -185,7 +188,7 @@ def main():
     N, K, distance_matrix = import_data_file('input100.txt')
 
     sol = Solver(N, K, distance_matrix)
-    sol.solve_tabu_search(time_limit=10, opt='2.5', tabu_list_size=100)
+    sol.solve_tabu_search(iterations=100, opt='2.5', tabu_list_size=100)
     sol.print_solution()
 
 

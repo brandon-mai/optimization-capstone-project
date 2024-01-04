@@ -83,7 +83,7 @@ class Solver:
 
         return new_route
 
-    def get_neighborhood(self, route, time_limit=10, opt='2'):
+    def get_neighborhood(self, route, opt='2', time_limit=None):
         """Return a list of neighbors of route, in ascending order of total distance, using 2 or 2.5-opt."""
         neighbor_list = list()
         route = [0] + route
@@ -102,8 +102,9 @@ class Solver:
                 y1 = route[j]
                 y2 = route[(j + 1) % num_nodes]
 
-                if time.time() - self.time > time_limit:
-                    return sorted(neighbor_list, key=lambda x: self.get_distance(x))
+                if time_limit:
+                    if time.time() - self.time > time_limit:
+                        return sorted(neighbor_list, key=lambda x: self.get_distance(x))
 
                 if self.Distance_Matrix[x1][x2] + self.Distance_Matrix[y1][y2] > self.Distance_Matrix[x1][y1] + \
                         self.Distance_Matrix[x2][y2]:
@@ -141,18 +142,18 @@ class Solver:
 
         return sorted(neighbor_list, key=lambda x: self.get_distance(x))
 
-    def solve_beam_search(self, time_limit=10, opt='2'):
+    def solve_beam_search(self, iterations=100, opt='2', beam_width=5):
         """Solve the problem using Local Beam Search algorithm."""
         self.time = time.time()
         self.get_first_solution()
-        neighborhood = self.get_neighborhood(self.ans, time_limit=time_limit, opt=opt)
+        neighborhood = self.get_neighborhood(self.ans, opt=opt)
         neighbor_index = 0
         candidate_list = list()
 
-        while time.time() - self.time < time_limit or len(candidate_list) == 0:
+        while iterations > 0:
             if neighbor_index < len(neighborhood):
                 neighbor = neighborhood[neighbor_index]
-                candidates = self.get_neighborhood(neighbor, time_limit=time_limit + 1, opt=opt)
+                candidates = self.get_neighborhood(neighbor, opt=opt)
                 candidate_list += candidates
                 neighbor_index += 1
             else:
@@ -164,19 +165,16 @@ class Solver:
 
                 # Sort candidate_list by total distance and take the top candidates
                 candidate_list = sorted(candidate_list, key=lambda x: self.get_distance(x))
+                if len(candidate_list) == 0:
+                    break
                 if self.get_distance(candidate_list[0]) < self.best_dist:
                     self.ans = candidate_list[0]
                     self.best_dist = self.get_distance(self.ans)
-                beam_width = min(len(candidate_list), 20)
-                neighborhood = candidate_list[:beam_width]
+                neighborhood = candidate_list[:min(len(candidate_list), beam_width)]
 
                 candidate_list = list()
                 neighbor_index = 0
-
-        candidate_list = sorted(candidate_list, key=lambda x: self.get_distance(x))
-        if self.get_distance(candidate_list[0]) < self.best_dist:
-            self.ans = candidate_list[0]
-            self.best_dist = self.get_distance(self.ans)
+                iterations -= 1
 
     def print_solution(self):
         print(self.N)
@@ -190,7 +188,7 @@ def main():
     N, K, distance_matrix = import_data_file('input100.txt')
 
     sol = Solver(N, K, distance_matrix)
-    sol.solve_beam_search(time_limit=10, opt='2.5')
+    sol.solve_beam_search(iterations=100, opt='2.5', beam_width=5)
     sol.print_solution()
 
 

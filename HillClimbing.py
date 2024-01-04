@@ -83,7 +83,7 @@ class Solver:
 
         return new_route
 
-    def get_neighborhood(self, route, time_limit=10, opt='2'):
+    def get_neighborhood(self, route, opt='2', time_limit=None):
         """Return a list of neighbors of route, in ascending order of total distance, using 2 or 2.5-opt."""
         neighbor_list = list()
         route = [0] + route
@@ -102,8 +102,9 @@ class Solver:
                 y1 = route[j]
                 y2 = route[(j + 1) % num_nodes]
 
-                if time.time() - self.time > time_limit:
-                    return sorted(neighbor_list, key=lambda x: self.get_distance(x))
+                if time_limit:
+                    if time.time() - self.time > time_limit:
+                        return sorted(neighbor_list, key=lambda x: self.get_distance(x))
 
                 if self.Distance_Matrix[x1][x2] + self.Distance_Matrix[y1][y2] > self.Distance_Matrix[x1][y1] + \
                         self.Distance_Matrix[x2][y2]:
@@ -141,11 +142,11 @@ class Solver:
 
         return sorted(neighbor_list, key=lambda x: self.get_distance(x))
 
-    def solve_hill_climbing(self, time_limit=10, opt='2'):
+    def solve_hill_climbing(self, opt='2'):
         """Solve the problem using Local Hill Climbing algorithm."""
         self.time = time.time()
         self.get_first_solution()
-        neighborhood = self.get_neighborhood(self.ans, time_limit=time_limit, opt=opt)
+        neighborhood = self.get_neighborhood(self.ans, opt=opt)
 
         while neighborhood:
             neighbor = neighborhood.pop(0)
@@ -153,7 +154,7 @@ class Solver:
             if neighbor_dist < self.best_dist:
                 self.ans = neighbor
                 self.best_dist = neighbor_dist
-                neighborhood = self.get_neighborhood(self.ans, time_limit=time_limit, opt=opt)
+                neighborhood = self.get_neighborhood(self.ans, opt=opt)
             else:
                 break
 
@@ -169,7 +170,7 @@ def main():
     N, K, distance_matrix = import_data_file('input100.txt')
 
     sol = Solver(N, K, distance_matrix)
-    sol.solve_hill_climbing(time_limit=10, opt='2.5')
+    sol.solve_hill_climbing(opt='2.5')
     sol.print_solution()
 
 
