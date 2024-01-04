@@ -71,8 +71,21 @@ class Solver:
 
         return new_route
 
-    def get_neighborhood(self, route, time_limit=10):
-        """Return a list of neighbors of route, in ascending order of total distance."""
+    def node_shift(self, route, i, j):
+        """Shift node from index i to between j and j + 1 in route."""
+        new_route = route[:]
+
+        if i < j:
+            x0 = new_route.pop(i)
+            new_route.insert(j, x0)
+        else:
+            x0 = new_route.pop(i)
+            new_route.insert(j + 1, x0)
+
+        return new_route
+
+    def get_neighborhood(self, route, time_limit=10, opt='2'):
+        """Return a list of neighbors of route, in ascending order of total distance, using 2 or 2.5-opt."""
         neighbor_list = list()
         route = [0] + route
         num_nodes = len(route)
@@ -101,9 +114,35 @@ class Solver:
                     if self.validate_route(neighbor):
                         neighbor_list.append(neighbor)
 
+                else:
+                    if opt == '2.5':
+                        # Look forward, shift x2 to after y1
+                        x3 = route[(i + 2) % num_nodes]
+                        if x3 != y1:
+                            if self.Distance_Matrix[x1][x2] + self.Distance_Matrix[x2][x3] + \
+                                    self.Distance_Matrix[y1][y2] > self.Distance_Matrix[x1][x3] + \
+                                    self.Distance_Matrix[y1][x2] + self.Distance_Matrix[x2][y2]:
+                                neighbor = self.node_shift(route, (i + 1) % num_nodes, j)
+                                neighbor = neighbor[neighbor.index(0):] + neighbor[:neighbor.index(0)]
+                                neighbor = neighbor[1:]
+                                if self.validate_route(neighbor):
+                                    neighbor_list.append(neighbor)
+
+                        # Look backward, shift y1 to after x1
+                        y0 = route[(num_nodes + j - 1) % num_nodes]
+                        if y0 != x2:
+                            if self.Distance_Matrix[y0][y1] + self.Distance_Matrix[y1][y2] + \
+                                    self.Distance_Matrix[x1][x2] > self.Distance_Matrix[y0][y2] + \
+                                    self.Distance_Matrix[x1][y1] + self.Distance_Matrix[y1][x2]:
+                                neighbor = self.node_shift(route, j, i)
+                                neighbor = neighbor[neighbor.index(0):] + neighbor[:neighbor.index(0)]
+                                neighbor = neighbor[1:]
+                                if self.validate_route(neighbor):
+                                    neighbor_list.append(neighbor)
+
         return sorted(neighbor_list, key=lambda x: self.get_distance(x))
 
-    def solve_tabu_search(self, time_limit=10, tabu_list_size=100):
+    def solve_tabu_search(self, time_limit=10, opt='2', tabu_list_size=100):
         """Solve the problem using Tabu Search algorithm."""
         self.time = time.time()
         self.get_first_solution()
@@ -112,7 +151,7 @@ class Solver:
         tabu_list = list()
 
         while time.time() - self.time < time_limit:
-            neighborhood = self.get_neighborhood(current_ans, time_limit=time_limit)
+            neighborhood = self.get_neighborhood(current_ans, time_limit=time_limit, opt=opt)
             neighborhood = [neighbor for neighbor in neighborhood if neighbor not in tabu_list]
 
             if len(neighborhood) == 0:
@@ -143,10 +182,10 @@ class Solver:
 
 def main():
     # N, K, distance_matrix = import_data_input()
-    N, K, distance_matrix = import_data_file('input500.txt')
+    N, K, distance_matrix = import_data_file('input100.txt')
 
     sol = Solver(N, K, distance_matrix)
-    sol.solve_tabu_search(time_limit=10, tabu_list_size=100)
+    sol.solve_tabu_search(time_limit=10, opt='2.5', tabu_list_size=100)
     sol.print_solution()
 
 

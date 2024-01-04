@@ -7,7 +7,7 @@ to be added *soon*
 - [x] Backtracking/BnB
 - [x] CP: ortools (keyword: capacitated vehicle routing problem with pickup and delivery)
 - [x] Greedy (nearest neighbor)
-- [x] Basic Local search (hill climbing 2-opt)
+- [x] Basic Local search (hill climbing 2 or 2.5-opt)
 - [x] Beam search
 - [x] Tabu search
 - [ ] Simulated annealing
