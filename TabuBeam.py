@@ -1,7 +1,8 @@
 import time
 import NearestNeighbor
 
-# IMPROVEMENT OF HILL CLIMBING, CONSIDERING A BEAM OF CANDIDATES INSTEAD OF JUST THE BEST ONE
+
+# A VARIANT OF LOCAL SEARCH, EXPANDING ALL NEIGHBORS WHILE KEEPING A TABU LIST TO AVOID REVISITING
 
 
 def import_data_input():
@@ -142,10 +143,12 @@ class Solver:
 
         return sorted(neighbor_list, key=lambda x: self.get_distance(x))
 
-    def solve_beam_search(self, iterations=100, opt='2', beam_width=5):
-        """Solve the problem using Local Beam Search algorithm."""
+    def solve_tabu_beam(self, iterations=100, opt='2', tabu_list_size=100, beam_width=5):
+        """Solve the problem using Tabu-Beam search hybrid/fusion(?)."""
         self.time = time.time()
         self.get_first_solution()
+
+        tabu_list = list()
         neighborhood = self.get_neighborhood(self.ans, opt=opt)
         neighbor_index = 0
         candidate_list = list()
@@ -161,15 +164,23 @@ class Solver:
                 candidate_list = [tuple(x) for x in candidate_list]
                 candidate_list = list(set(candidate_list))
                 candidate_list = [list(x) for x in candidate_list]
-                candidate_list = list(filter(lambda x: x not in neighborhood, candidate_list))
-
-                # Sort candidate_list by total distance and take the top candidates
+                candidate_list = list(filter(lambda x: x not in neighborhood and x not in tabu_list, candidate_list))
                 candidate_list = sorted(candidate_list, key=lambda x: self.get_distance(x))
+
                 if len(candidate_list) == 0:
                     break
-                if self.get_distance(candidate_list[0]) < self.best_dist:
-                    self.ans = candidate_list[0]
-                    self.best_dist = self.get_distance(self.ans)
+
+                best_neighbor = candidate_list[0]
+                best_neighbor_dist = self.get_distance(best_neighbor)
+
+                tabu_list.append(best_neighbor)
+                if len(tabu_list) > tabu_list_size:
+                    tabu_list.pop(0)
+
+                if best_neighbor_dist < self.best_dist:
+                    self.ans = best_neighbor
+                    self.best_dist = best_neighbor_dist
+
                 neighborhood = candidate_list[:min(len(candidate_list), beam_width)]
 
                 candidate_list = list()
@@ -188,7 +199,7 @@ def main():
     N, K, distance_matrix = import_data_file('input100.txt')
 
     sol = Solver(N, K, distance_matrix)
-    sol.solve_beam_search(iterations=100, opt='2.5', beam_width=10)
+    sol.solve_tabu_beam(iterations=100, opt='2.5', tabu_list_size=100, beam_width=10)
     sol.print_solution()
 
 
