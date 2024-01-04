@@ -70,7 +70,7 @@ class Solver:
 
 def main():
     # N, K, distance_matrix = import_data_input()
-    N, K, distance_matrix = import_data_file('input500.txt')
+    N, K, distance_matrix = import_data_file('input100.txt')
 
     sol = Solver(N, K, distance_matrix)
     sol.solve_greedy()
