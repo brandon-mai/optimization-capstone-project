@@ -184,7 +184,7 @@ class Solver:
 
 def main():
     # N, K, distance_matrix = import_data_input()
-    N, K, distance_matrix = import_data_file('input100.txt')
+    N, K, distance_matrix = import_data_file('dataset/input100.txt')
 
     sol = Solver(N, K, distance_matrix)
     sol.solve_beam_search(iterations=100, opt='2.5', beam_width=5)

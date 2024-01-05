@@ -151,7 +151,7 @@ class Solver:
 
 def main():
     # N, K, distance_matrix = import_data_input()
-    N, K, distance_matrix = import_data_file('input100.txt')
+    N, K, distance_matrix = import_data_file('dataset/input100.txt')
 
     sol = Solver(N, K, distance_matrix)
     sol.solve_simulated_annealing(initial_temp=5000, alpha=0.99, time_limit=180)

@@ -114,7 +114,7 @@ class Solver:
 
 def main():
     # N, K, distance_matrix = import_data_input()
-    N, K, distance_matrix = import_data_file('input5.txt')
+    N, K, distance_matrix = import_data_file('dataset/input5.txt')
 
     sol = Solver(N, K, distance_matrix)
     sol.solve_bnb()
