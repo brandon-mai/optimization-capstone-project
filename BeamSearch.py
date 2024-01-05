@@ -114,31 +114,30 @@ class Solver:
                     if self.validate_route(neighbor):
                         neighbor_list.append(neighbor)
 
-                else:
-                    if opt == '2.5':
-                        # Look forward, shift x2 to after y1
-                        x3 = route[(i + 2) % num_nodes]
-                        if x3 != y1:
-                            if self.Distance_Matrix[x1][x2] + self.Distance_Matrix[x2][x3] + \
-                                    self.Distance_Matrix[y1][y2] > self.Distance_Matrix[x1][x3] + \
-                                    self.Distance_Matrix[y1][x2] + self.Distance_Matrix[x2][y2]:
-                                neighbor = self.node_shift(route, (i + 1) % num_nodes, j)
-                                neighbor = neighbor[neighbor.index(0):] + neighbor[:neighbor.index(0)]
-                                neighbor = neighbor[1:]
-                                if self.validate_route(neighbor):
-                                    neighbor_list.append(neighbor)
+                if opt == '2.5':
+                    # Look forward, shift x2 to after y1
+                    x3 = route[(i + 2) % num_nodes]
+                    if x3 != y1:
+                        if self.Distance_Matrix[x1][x2] + self.Distance_Matrix[x2][x3] + \
+                                self.Distance_Matrix[y1][y2] > self.Distance_Matrix[x1][x3] + \
+                                self.Distance_Matrix[y1][x2] + self.Distance_Matrix[x2][y2]:
+                            neighbor = self.node_shift(route, (i + 1) % num_nodes, j)
+                            neighbor = neighbor[neighbor.index(0):] + neighbor[:neighbor.index(0)]
+                            neighbor = neighbor[1:]
+                            if self.validate_route(neighbor):
+                                neighbor_list.append(neighbor)
 
-                        # Look backward, shift y1 to after x1
-                        y0 = route[(num_nodes + j - 1) % num_nodes]
-                        if y0 != x2:
-                            if self.Distance_Matrix[y0][y1] + self.Distance_Matrix[y1][y2] + \
-                                    self.Distance_Matrix[x1][x2] > self.Distance_Matrix[y0][y2] + \
-                                    self.Distance_Matrix[x1][y1] + self.Distance_Matrix[y1][x2]:
-                                neighbor = self.node_shift(route, j, i)
-                                neighbor = neighbor[neighbor.index(0):] + neighbor[:neighbor.index(0)]
-                                neighbor = neighbor[1:]
-                                if self.validate_route(neighbor):
-                                    neighbor_list.append(neighbor)
+                    # Look backward, shift y1 to after x1
+                    y0 = route[(num_nodes + j - 1) % num_nodes]
+                    if y0 != x2:
+                        if self.Distance_Matrix[y0][y1] + self.Distance_Matrix[y1][y2] + \
+                                self.Distance_Matrix[x1][x2] > self.Distance_Matrix[y0][y2] + \
+                                self.Distance_Matrix[x1][y1] + self.Distance_Matrix[y1][x2]:
+                            neighbor = self.node_shift(route, j, i)
+                            neighbor = neighbor[neighbor.index(0):] + neighbor[:neighbor.index(0)]
+                            neighbor = neighbor[1:]
+                            if self.validate_route(neighbor):
+                                neighbor_list.append(neighbor)
 
         return sorted(neighbor_list, key=lambda x: self.get_distance(x))
 
