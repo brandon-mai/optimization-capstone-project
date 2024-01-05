@@ -34,10 +34,10 @@ class Solver:
         return sum(self.Distance_Matrix[i][j] for i, j in zip(route, route[1:]))
 
     def get_first_solution(self):
-        """Add initial solution to current best answer/distance Nearest Neighbor (greedy) algorithm."""
+        """Add initial solution to current best answer/distance with Nearest Neighbor (greedy) algorithm."""
         greedy_solver = NearestNeighbor.Solver(self.N, self.K, self.Distance_Matrix)
         greedy_solver.solve_greedy()
-        self.ans = greedy_solver.ans
+        self.ans = greedy_solver.ans[:]
         self.best_dist = greedy_solver.best_dist
 
     def validate_route(self, route):
@@ -168,7 +168,7 @@ class Solver:
                 if len(candidate_list) == 0:
                     break
                 if self.get_distance(candidate_list[0]) < self.best_dist:
-                    self.ans = candidate_list[0]
+                    self.ans = candidate_list[0][:]
                     self.best_dist = self.get_distance(self.ans)
                 neighborhood = candidate_list[:min(len(candidate_list), beam_width)]
 
@@ -188,7 +188,7 @@ def main():
     N, K, distance_matrix = import_data_file('input100.txt')
 
     sol = Solver(N, K, distance_matrix)
-    sol.solve_beam_search(iterations=100, opt='2.5', beam_width=10)
+    sol.solve_beam_search(iterations=100, opt='2.5', beam_width=5)
     sol.print_solution()
 
 

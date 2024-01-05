@@ -37,7 +37,7 @@ class Solver:
         """Add initial solution to current best answer/distance Nearest Neighbor (greedy) algorithm."""
         greedy_solver = NearestNeighbor.Solver(self.N, self.K, self.Distance_Matrix)
         greedy_solver.solve_greedy()
-        self.ans = greedy_solver.ans
+        self.ans = greedy_solver.ans[:]
         self.best_dist = greedy_solver.best_dist
 
     def validate_route(self, route):
@@ -147,7 +147,7 @@ class Solver:
         self.time = time.time()
         self.get_first_solution()
 
-        current_ans = self.ans
+        current_ans = self.ans[:]
         tabu_list = list()
 
         while iterations > 0:
@@ -162,7 +162,7 @@ class Solver:
             best_neighbor_dist = self.get_distance(best_neighbor)
 
             current_ans = best_neighbor
-            tabu_list.append(best_neighbor)
+            tabu_list.append(best_neighbor[:])
 
             # Remove the oldest entry from the tabu list if it exceeds the size
             if len(tabu_list) > tabu_list_size:
@@ -170,7 +170,7 @@ class Solver:
 
             if best_neighbor_dist < self.get_distance(self.ans):
                 # Update the best solution if the current neighbor is better
-                self.ans = best_neighbor
+                self.ans = best_neighbor[:]
                 self.best_dist = best_neighbor_dist
 
             iterations -= 1
@@ -187,7 +187,7 @@ def main():
     N, K, distance_matrix = import_data_file('input100.txt')
 
     sol = Solver(N, K, distance_matrix)
-    sol.solve_tabu_search(iterations=100, opt='2.5', tabu_list_size=100)
+    sol.solve_tabu_search(iterations=100, opt='2.5', tabu_list_size=50)
     sol.print_solution()
 
 
