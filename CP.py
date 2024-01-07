@@ -58,7 +58,7 @@ class Solver:
         routing.AddDimension(
             transit_callback_index,
             0,  # no slack
-            1000,  # vehicle maximum travel distance
+            100000,  # vehicle maximum travel distance
             True,  # start cumul to zero
             "Distance",
         )
