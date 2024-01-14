@@ -1,163 +1,195 @@
+"""
+CBUS problem:
+There are n passengers 1, 2, …, n.
+The passenger i want to travel from point i to point i + n (i = 1,2,…,n).
+There is a bus located at point 0 and has k places for transporting the passengers
+    (it means at any time, there are at most k passengers on the bus).
+You are given the distance matrix c in which c(i,j) is the traveling distance
+    from point i to point j (i, j = 0,1,…, 2n).
+Compute the shortest route for the bus, serving n passengers and coming back to point 0.
+Input
+    Line 1 contains n and k (1≤n≤1000,1≤k≤50)
+    Line i+1 (i=1,2,…,2n+1) contains the (i−1)th line of the matrix c
+    (rows and columns are indexed from 0,1,2,..,2n).
+Output
+    Line 1: write the value n
+    Line 2: Write the sequence of points (pickup and drop-off) of passengers
+    (separated by a SPACE character)
+"""
+# Simulated annealing
+
 import time
 import math
 import random
 import NearestNeighbor
 
-# CLASSIC SIMULATED ANNEALING ALGORITHM
+
+def import_data_from_keyboard():
+    first_line = input().split()
+    n, k = int(first_line[0]), int(first_line[1])
+    distance_matrix = []
+
+    for i in range(2 * n + 1):
+        temp = input().split()  # new line contains all char element
+        next_line = [int(number) for number in temp]
+        distance_matrix.append(next_line)
+
+    return n, k, distance_matrix
 
 
-def import_data_input():
-    N, K = map(int, input().split())
-    distance_matrix = [[int(x) for x in input().split()] for _ in range(2 * N + 1)]
-    return N, K, distance_matrix
+def import_data_from_file(filename):
+    f = open(filename, 'r')
+
+    first_line = f.readline().split()
+    n, k = int(first_line[0]), int(first_line[1])
+    distance_matrix = []
+
+    for i in range(2 * n + 1):
+        temp = f.readline().split()  # new line contains all char element
+        next_line = [int(number) for number in temp]
+        distance_matrix.append(next_line)
+
+    f.close()
+
+    return n, k, distance_matrix
 
 
-def import_data_file(file_name):
-    with open(file_name, 'r') as f:
-        N, K = map(int, f.readline().split())
-        distance_matrix = [[int(x) for x in f.readline().split()] for _ in range(2 * N + 1)]
-    return N, K, distance_matrix
+def generate_initial_solution(n, k, distance_matrix):
+    greedy_solver = NearestNeighbor.Solver(n, k, distance_matrix)
+    greedy_solver.solve_greedy()
+    return greedy_solver.ans[:]
 
 
-class Solver:
-    def __init__(self, N, K, distance_matrix):
-        self.N = N
-        self.K = K
-        self.Num_Nodes = 2 * N + 1
-        self.Distance_Matrix = distance_matrix
+def distance(route, distance_matrix):
+    full_route = [0] + route + [0]
+    n = len(route) + 1
+    dist = 0
 
-        self.ans = list()
-        self.best_dist = 0
-        self.time = time.time()
+    for i in range(n):
+        dist += distance_matrix[full_route[i]][full_route[i + 1]]
+    return dist
 
-    def get_distance(self, route):
-        """Return total distance of route."""
-        route = [0] + route + [0]
-        return sum(self.Distance_Matrix[i][j] for i, j in zip(route, route[1:]))
 
-    def get_first_solution(self):
-        """Add initial solution to current best answer/distance with Nearest Neighbor (greedy) algorithm."""
-        greedy_solver = NearestNeighbor.Solver(self.N, self.K, self.Distance_Matrix)
-        greedy_solver.solve_greedy()
-        self.ans = greedy_solver.ans
-        self.best_dist = greedy_solver.best_dist
+def check(n, k, route):  # checking if the route satisfied the constrains
+    capacity = 0
+    for point in route:
+        capacity = capacity + 1 if point <= n else capacity - 1
 
-    def validate_route(self, route):
-        """Return True if route satisfies constraints."""
-        capacity = 0
-        for node in route:
-            capacity += 1 if node <= self.N else -1
+        if point <= n:
+            if route.index(point) > route.index(point + n):  # passenger i must be on the bus before the drop-off
+                return False
 
-            if node <= self.N:
-                if route.index(node) > route.index(node + self.N):
-                    return 0
+        if capacity > k or capacity < 0:
+            return False
+    return True
 
-            if capacity > self.K or capacity < 0:
-                return 0
 
-        return 1
+# The next 4 function are the 4 methods for generating candidate route
+def inverse(route):  # inverses the order of 2 cities in the route
+    n = len(route)
+    p1, p2 = random.choices(range(n), k=2)
+    point1, point2 = min(p1, p2), max(p1, p2)
 
-    def reverse_segment(self, route, i, j):
-        """Reverse segment from index i to index j in route."""
-        new_route = route[:]
-        n = len(route)
-        segment_size = (n + j - i + 1) % n
-        left = i
-        right = j
+    new_part = route[point1:point2 + 1]
+    new_part = new_part[::-1]
 
-        for k in range(segment_size // 2):
-            new_route[left], new_route[right] = new_route[right], new_route[left]
-            left = (left + 1) % segment_size
-            right = (segment_size + right - 1) % segment_size
+    new_route = route[0:point1] + new_part + route[point2 + 1:n + 1]
+    return new_route
 
-        return new_route
 
-    def node_shift(self, route, i, j):
-        """Shift node from index i to between j and j + 1 in route."""
-        new_route = route[:]
+def swap(route1):  # swap two arbitrary points
+    route = route1[:]
+    n = len(route)
+    p1, p2 = random.choices(range(n), k=2)
+    point1, point2 = min(p1, p2), max(p1, p2)
+    route[point1], route[point2] = route[point2], route[point1]
 
-        if i < j:
-            x0 = new_route.pop(i)
-            new_route.insert(j, x0)
+    return route
+
+
+def insert(route):  # select random point j in the route and insert it to the ith position
+
+    new_route = route[:]
+    i, j = random.choices(range(n), k=2)
+
+    if i < j:
+        x0 = new_route.pop(i)
+        new_route.insert(j, x0)
+    else:
+        x0 = new_route.pop(i)
+        new_route.insert(j + 1, x0)
+
+    return new_route
+
+
+def swap_routes(route1):  # select a subroute [a:b+1] and insert in at another position
+    route = route1[:]
+    n = len(route)
+    while True:
+        point1, point2 = random.choices(range(n), k=2)
+        if point1 <= point2: break
+
+    temp = route[point1:point2 + 1]
+    del route[point1:point2 + 1]
+    insert_position = random.choice(range(n))
+    for i in temp:
+        route.insert(insert_position, i)
+    return route
+
+
+def get_neighbor(n, k, route1):
+    route = list(route1)
+    while True:
+        func = random.choice([0, 1, 2, 3])
+        new_route = []
+        if func == 0:
+            new_route = inverse(route)
+        elif func == 1:
+            new_route = insert(route)
+        elif func == 2:
+            new_route = swap(route)
         else:
-            x0 = new_route.pop(i)
-            new_route.insert(j + 1, x0)
+            new_route = swap_routes(route)
 
-        return new_route
-
-    def adjacent_swap(self, route, i, j):
-        """Swap 4 adjacent nodes in route."""
-        new_route = route[:]
-        new_route[i], new_route[i + 1] = new_route[i + 1], new_route[i]
-        new_route[j], new_route[j + 1] = new_route[j + 1], new_route[j]
-        return new_route
-
-    def get_random_neighbor(self, route):
-        """Return a satisfying neighbor by various mutating methods."""
-        while True:
-            i, j = random.sample(range(1, self.Num_Nodes - 2), 2)
-            mutation = random.choice([self.node_shift, self.adjacent_swap, self.reverse_segment])
-            new_route = mutation(route, i, j)
-
-            if self.validate_route(new_route):
-                return new_route
-
-    def solve_simulated_annealing(self, initial_temp=5000, alpha=0.99, time_limit=30):
-        """Solve the problem using Simulated Annealing algorithm."""
-        self.time = time.time()
-        self.get_first_solution()
-
-        temp = initial_temp
-
-        best_ans = self.ans[:]
-        best_dist = self.best_dist
-
-        current_ans = best_ans[:]
-        current_dist = best_dist
-
-        while time.time() - self.time < time_limit:
-            # Get random neighbor
-            new_route = self.get_random_neighbor(current_ans)
-
-            # Calculate delta
-            delta = self.get_distance(new_route) - current_dist
-
-            # If delta is negative, update answer and distance.
-            if delta < 0:
-                current_ans = new_route[:]
-                current_dist += delta
-                best_ans = new_route[:]
-                best_dist += delta
-
-            # If delta is 0 or positive, accept with probability e^(-delta/temp).
-            else:
-                if math.exp(-delta / temp) >= random.random():
-                    print(f'accepted {self.get_distance(new_route)}, current temperature is {temp}')
-                    current_ans = new_route[:]
-                    current_dist += delta
-
-            # Update temperature.
-            temp *= alpha
-
-        self.ans = best_ans[:]
-        self.best_dist = self.get_distance(self.ans)
-
-    def print_solution(self):
-        print(self.N)
-        print(*self.ans)
-        print(f'\nBest distance found: {self.best_dist}')
-        print(f'Time taken: {time.time() - self.time}')
+        if (check(n, k, new_route)):
+            return new_route
 
 
-def main():
-    # N, K, distance_matrix = import_data_input()
-    N, K, distance_matrix = import_data_file('dataset/input100.txt')
+def Simulated_Annealing(n, k, distance_matrix):
+    temperature = 5000
+    alpha = 0.99
+    time_limit = 180
 
-    sol = Solver(N, K, distance_matrix)
-    sol.solve_simulated_annealing(initial_temp=5000, alpha=0.99, time_limit=180)
-    sol.print_solution()
+    shortest_route = generate_initial_solution(n, k, distance_matrix)
+    t = time.time()
+
+    while time.time() - t < time_limit:
+        # while distance(shortest_route, distance_matrix) >= 128:
+        candidate_route = get_neighbor(n, k, shortest_route)
+
+        delta = distance(candidate_route, distance_matrix) - distance(shortest_route, distance_matrix)
+        if delta < 0:  # better
+            shortest_route = candidate_route
+            print("Best result found: ", distance(shortest_route, distance_matrix), "temp = ", temperature)
+        else:
+            p = math.exp(-delta / temperature)
+            r = random.uniform(0, 1)
+            if r < p:
+                shortest_route = candidate_route
+                print("Best result found: ", distance(shortest_route, distance_matrix), "temp = ", temperature)
+
+        temperature *= alpha
+
+    return shortest_route
 
 
-if __name__ == "__main__":
-    main()
+# N, K, distance_matrix = import_data_from_keyboard()
+n, k, distance_matrix = import_data_from_file('dataset/input100.txt')
 
+result = Simulated_Annealing(n, k, distance_matrix)
+print(n)
+print(result)
+print("Best result found: ", distance(result, distance_matrix))
+
+# print(check(n, k, generate_initial_solution(n, k, distance_matrix)))
+# print(distance(generate_initial_solution(n, k, distance_matrix), distance_matrix))
